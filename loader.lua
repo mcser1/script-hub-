@@ -203,7 +203,7 @@ CreateScriptButton("dropkick (NDS)", "https://raw.githubusercontent.com/mcser1/s
 CreateScriptButton("infiniteyield", "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
 CreateScriptButton("Killaura", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/killaura.lua")
 CreateScriptButton("walk fling", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/tuchfling.lua")
--- CreateScriptButton("Game Name 5", "https://raw.githubusercontent.com/.../script5.lua")
+CreateScriptButton("weak fling", "https://raw.githubusercontent.com/sypcerr/scripts/refs/heads/main/UFGUI")
 -- CreateScriptButton("Game Name 5", "https://raw.githubusercontent.com/.../script5.lua")
 -- CreateScriptButton("Game Name 5", "https://raw.githubusercontent.com/.../script5.lua")
 -- CreateScriptButton("Game Name 5", "https://raw.githubusercontent.com/.../script5.lua")
