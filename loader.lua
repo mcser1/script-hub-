@@ -197,8 +197,12 @@ local function CreateScriptButton(gameName, scriptUrl)
 end
 
 -- // Add Game Buttons Here
-CreateScriptButton("Fling", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/nds.lua")
--- CreateScriptButton("Game Name 2", "https://raw.githubusercontent.com/.../script2.lua")
+CreateScriptButton("Fling Gui", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/nds.lua")
+CreateScriptButton("Fly Gui", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/fly.lua")
 -- CreateScriptButton("Game Name 3", "https://raw.githubusercontent.com/.../script3.lua")
+-- CreateScriptButton("Game Name 4", "https://raw.githubusercontent.com/.../script4.lua")
+-- CreateScriptButton("Game Name 5", "https://raw.githubusercontent.com/.../script5.lua")
+
+
 
 Notify("Loader Loaded", "Select a game script to load.", 3)
