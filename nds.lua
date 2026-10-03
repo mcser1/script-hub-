@@ -147,7 +147,7 @@ local function ToggleRingParts(enable)
     end)
 end
 
--- // Player ESP System (Fixed Cleanup)
+-- // Player ESP System
 local ESPConnections = {}
 
 local function RemoveESPFromChar(char)
@@ -206,13 +206,11 @@ end
 local function ToggleESP(enable)
     getgenv().ESPActive = enable
     if not enable then
-        -- Disconnect player spawn listeners
         for plr, conn in pairs(ESPConnections) do
             if conn then conn:Disconnect() end
         end
         ESPConnections = {}
 
-        -- Thoroughly sweep and clean all ESP visuals from every player
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr.Character then
                 RemoveESPFromChar(plr.Character)
@@ -317,6 +315,20 @@ local function ExecuteFling(targetPlayer, flingMode)
         elseif flingMode == "Skid" then
             local rndOffset = Vector3.new(math.random(-3, 3), math.random(-2, 2), math.random(-3, 3))
             root.CFrame = CFrame.new(tRoot.Position + rndOffset) * CFrame.Angles(math.rad(math.random(0, 360)), math.rad(math.random(0, 360)), 0)
+        elseif flingMode == "Obliterate" then
+            -- Extreme hybrid predictive multi-axis impulse override algorithm
+            local predVel = tRoot.AssemblyLinearVelocity * 0.05
+            local spiralRadius = math.random(1, 3) * 0.5
+            local rad = math.rad(angle)
+            local jitterOffset = Vector3.new(
+                math.cos(rad * 3) * spiralRadius + (math.random(-15, 15) * 0.05),
+                (math.sin(rad * 5) * 1.5) + 0.2,
+                math.sin(rad * 3) * spiralRadius + (math.random(-15, 15) * 0.05)
+            )
+            
+            root.AssemblyLinearVelocity = Vector3.new(1e14, 1e14, 1e14)
+            root.AssemblyAngularVelocity = Vector3.new(1e15, 1e15, 1e15)
+            root.CFrame = (tRoot.CFrame + predVel + jitterOffset) * CFrame.Angles(math.rad(math.random(0, 360)), math.rad(math.random(0, 360)), math.rad(math.random(0, 360)))
         end
     end)
 
@@ -379,13 +391,15 @@ local function MakeDraggable(frame, dragHandle)
 end
 
 -- // Interface Build (c00lkidd Red / Black Aesthetic)
-if CoreGui:FindFirstChild("c00lkidd_Fling_GUI") then
-    CoreGui.c00lkidd_Fling_GUI:Destroy()
+local TargetParent = (gethui and gethui()) or CoreGui:FindFirstChild("RobloxGui") or LocalPlayer:WaitForChild("PlayerGui")
+
+if TargetParent:FindFirstChild("c00lkidd_Fling_GUI") then
+    TargetParent.c00lkidd_Fling_GUI:Destroy()
 end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "c00lkidd_Fling_GUI"
-ScreenGui.Parent = CoreGui
+ScreenGui.Parent = TargetParent
 ScreenGui.ResetOnSpawn = false
 
 local Main = Instance.new("Frame")
@@ -394,8 +408,8 @@ Main.Parent = ScreenGui
 Main.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
 Main.BorderColor3 = Color3.fromRGB(220, 0, 0)
 Main.BorderSizePixel = 2
-Main.Position = UDim2.new(0.35, 0, 0.15, 0)
-Main.Size = UDim2.new(0, 340, 0, 480)
+Main.Position = UDim2.new(0.35, 0, 0.12, 0)
+Main.Size = UDim2.new(0, 340, 0, 520)
 Main.Active = true
 
 local Top = Instance.new("Frame")
@@ -482,7 +496,7 @@ TextBox.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
 TextBox.BorderColor3 = Color3.fromRGB(150, 0, 0)
 TextBox.BorderSizePixel = 1
 TextBox.Position = UDim2.new(0.05, 0, 0.08, 0)
-TextBox.Size = UDim2.new(0.9, 0, 0.07, 0)
+TextBox.Size = UDim2.new(0.9, 0, 0.06, 0)
 TextBox.Font = Enum.Font.Code
 TextBox.PlaceholderText = "[Target: User / Display / all / others]"
 TextBox.PlaceholderColor3 = Color3.fromRGB(120, 50, 50)
@@ -518,30 +532,33 @@ local function RunFlingBatch(mode)
     end)
 end
 
-CreateBtn("IY Fling", UDim2.new(0.05, 0, 0.17, 0), UDim2.new(0.43, 0, 0.07, 0), nil, nil, function() RunFlingBatch("IY") end)
-CreateBtn("Super Fling", UDim2.new(0.52, 0, 0.17, 0), UDim2.new(0.43, 0, 0.07, 0), nil, nil, function() RunFlingBatch("Super") end)
-CreateBtn("Orbit Fling", UDim2.new(0.05, 0, 0.25, 0), UDim2.new(0.43, 0, 0.07, 0), nil, nil, function() RunFlingBatch("Orbit") end)
-CreateBtn("Skid Fling", UDim2.new(0.52, 0, 0.25, 0), UDim2.new(0.43, 0, 0.07, 0), nil, nil, function() RunFlingBatch("Skid") end)
+-- // Standard & Ultimate Fling Controls
+CreateBtn("OBLITERATE FLING (BEST)", UDim2.new(0.05, 0, 0.15, 0), UDim2.new(0.9, 0, 0.06, 0), Color3.fromRGB(90, 0, 0), Color3.fromRGB(255, 230, 0), function() RunFlingBatch("Obliterate") end)
+
+CreateBtn("IY Fling", UDim2.new(0.05, 0, 0.22, 0), UDim2.new(0.43, 0, 0.06, 0), nil, nil, function() RunFlingBatch("IY") end)
+CreateBtn("Super Fling", UDim2.new(0.52, 0, 0.22, 0), UDim2.new(0.43, 0, 0.06, 0), nil, nil, function() RunFlingBatch("Super") end)
+CreateBtn("Orbit Fling", UDim2.new(0.05, 0, 0.29, 0), UDim2.new(0.43, 0, 0.06, 0), nil, nil, function() RunFlingBatch("Orbit") end)
+CreateBtn("Skid Fling", UDim2.new(0.52, 0, 0.29, 0), UDim2.new(0.43, 0, 0.06, 0), nil, nil, function() RunFlingBatch("Skid") end)
 
 -- // Fling Nearest Action
-CreateBtn("FLING NEAREST PLAYER", UDim2.new(0.05, 0, 0.33, 0), UDim2.new(0.9, 0, 0.07, 0), Color3.fromRGB(70, 0, 0), Color3.fromRGB(255, 200, 200), function()
+CreateBtn("FLING NEAREST PLAYER", UDim2.new(0.05, 0, 0.36, 0), UDim2.new(0.9, 0, 0.06, 0), Color3.fromRGB(70, 0, 0), Color3.fromRGB(255, 200, 200), function()
     local target = GetNearestPlayer()
     if target then
         Notify("c00lkidd Fling", "Targeting Nearest: " .. target.DisplayName, 3)
         task.spawn(function()
-            ExecuteFling(target, "Super")
+            ExecuteFling(target, "Obliterate")
         end)
     else
         Notify("c00lkidd Error", "No nearby player found.", 3)
     end
 end)
 
-CreateBtn("STOP ALL FLINGS", UDim2.new(0.05, 0, 0.41, 0), UDim2.new(0.9, 0, 0.07, 0), Color3.fromRGB(120, 0, 0), Color3.fromRGB(255, 255, 255), function()
+CreateBtn("STOP ALL FLINGS", UDim2.new(0.05, 0, 0.43, 0), UDim2.new(0.9, 0, 0.06, 0), Color3.fromRGB(120, 0, 0), Color3.fromRGB(255, 255, 255), function()
     StopAllFlings()
 end)
 
 -- // Toggle Controls
-local SpinBtn = CreateBtn("Toggle Spin (OFF)", UDim2.new(0.05, 0, 0.49, 0), UDim2.new(0.9, 0, 0.07, 0), nil, nil, function() end)
+local SpinBtn = CreateBtn("Toggle Spin (OFF)", UDim2.new(0.05, 0, 0.50, 0), UDim2.new(0.9, 0, 0.06, 0), nil, nil, function() end)
 SpinBtn.MouseButton1Click:Connect(function()
     getgenv().Spinning = not getgenv().Spinning
     SpinBtn.Text = getgenv().Spinning and "Toggle Spin (ON)" or "Toggle Spin (OFF)"
@@ -559,7 +576,7 @@ SpinBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
-local RingBtn = CreateBtn("Toggle Red Ring (OFF)", UDim2.new(0.05, 0, 0.57, 0), UDim2.new(0.9, 0, 0.07, 0), nil, nil, function() end)
+local RingBtn = CreateBtn("Toggle Red Ring (OFF)", UDim2.new(0.05, 0, 0.57, 0), UDim2.new(0.9, 0, 0.06, 0), nil, nil, function() end)
 RingBtn.MouseButton1Click:Connect(function()
     local newState = not getgenv().RingActive
     ToggleRingParts(newState)
@@ -567,7 +584,7 @@ RingBtn.MouseButton1Click:Connect(function()
     RingBtn.TextColor3 = newState and Color3.fromRGB(255, 220, 0) or Color3.fromRGB(255, 50, 50)
 end)
 
-local ESPBtn = CreateBtn("Toggle ESP (OFF)", UDim2.new(0.05, 0, 0.65, 0), UDim2.new(0.9, 0, 0.07, 0), nil, nil, function() end)
+local ESPBtn = CreateBtn("Toggle ESP (OFF)", UDim2.new(0.05, 0, 0.64, 0), UDim2.new(0.9, 0, 0.06, 0), nil, nil, function() end)
 ESPBtn.MouseButton1Click:Connect(function()
     local newState = not getgenv().ESPActive
     ToggleESP(newState)
@@ -575,7 +592,7 @@ ESPBtn.MouseButton1Click:Connect(function()
     ESPBtn.TextColor3 = newState and Color3.fromRGB(255, 220, 0) or Color3.fromRGB(255, 50, 50)
 end)
 
-local AntiFallBtn = CreateBtn("NDS Anti-Fall (ON)", UDim2.new(0.05, 0, 0.73, 0), UDim2.new(0.9, 0, 0.07, 0), nil, Color3.fromRGB(255, 50, 50), function() end)
+local AntiFallBtn = CreateBtn("NDS Anti-Fall (ON)", UDim2.new(0.05, 0, 0.71, 0), UDim2.new(0.9, 0, 0.06, 0), nil, Color3.fromRGB(255, 50, 50), function() end)
 AntiFallBtn.MouseButton1Click:Connect(function()
     getgenv().AntiFallDamage = not getgenv().AntiFallDamage
     AntiFallBtn.Text = getgenv().AntiFallDamage and "NDS Anti-Fall (ON)" or "NDS Anti-Fall (OFF)"
@@ -583,11 +600,11 @@ AntiFallBtn.MouseButton1Click:Connect(function()
 end)
 
 -- // External Loader Button
-CreateBtn("LOAD INFINITE YIELD", UDim2.new(0.05, 0, 0.82, 0), UDim2.new(0.9, 0, 0.08, 0), Color3.fromRGB(40, 10, 10), Color3.fromRGB(255, 180, 0), function()
+CreateBtn("LOAD INFINITE YIELD", UDim2.new(0.05, 0, 0.80, 0), UDim2.new(0.9, 0, 0.07, 0), Color3.fromRGB(40, 10, 10), Color3.fromRGB(255, 180, 0), function()
     Notify("c00lkidd Loader", "Executing Infinite Yield...", 3)
     task.spawn(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
     end)
 end)
 
-Notify("c00lkidd GUI", "System initialized successfully.", 3)
+Notify("c00lkidd GUI", "System initialized with Obliterate mode.", 3)
