@@ -234,7 +234,7 @@ Players.PlayerRemoving:Connect(function(plr)
     end
 end)
 
--- // High-Velocity Fling Engine
+-- // High-Velocity Fling Engine (MAX FORCE UPGRADE)
 local function StopAllFlings()
     getgenv().FlingActive = false
     local char = LocalPlayer.Character
@@ -275,31 +275,39 @@ local function ExecuteFling(targetPlayer, flingMode)
     workspace.CurrentCamera.CameraSubject = tRoot
     humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
 
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = false
+    -- Force Noclip on Local Character
+    local noclipConn = RunService.Stepped:Connect(function()
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
         end
-    end
+    end)
 
-    local bv = Instance.new("BodyVelocity")
-    bv.Velocity = Vector3.new(1e10, 1e10, 1e10)
-    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bv.Parent = root
+    -- Primary Force Vector Instance
+    local att = Instance.new("Attachment", root)
+    local lv = Instance.new("LinearVelocity", root)
+    lv.MaxForce = math.huge
+    lv.VectorVelocity = Vector3.new(1e35, 1e35, 1e35)
+    lv.Attachment0 = att
 
     local startTime = tick()
     local angle = 0
 
     local connection
-    connection = RunService.Heartbeat:Connect(function()
+    connection = RunService.Heartbeat:Connect(function(dt)
         if not getgenv().FlingActive or not root or not tRoot or not tRoot.Parent then
             if connection then connection:Disconnect() end
             return
         end
 
-        angle = angle + 120
-        
-        root.AssemblyLinearVelocity = Vector3.new(9e9, 9e9, 9e9)
-        root.AssemblyAngularVelocity = Vector3.new(1e12, 1e12, 1e12)
+        angle = angle + 360
+
+        -- Extreme Physics Impulse
+        root.AssemblyLinearVelocity = Vector3.new(9e35, 9e35, 9e35)
+        root.AssemblyAngularVelocity = Vector3.new(9e35, 9e35, 9e35)
 
         if flingMode == "IY" then
             local offset = CFrame.new(0, 1.2, 0) * CFrame.Angles(math.rad(angle), math.rad(angle * 2), 0)
@@ -316,18 +324,18 @@ local function ExecuteFling(targetPlayer, flingMode)
             local rndOffset = Vector3.new(math.random(-3, 3), math.random(-2, 2), math.random(-3, 3))
             root.CFrame = CFrame.new(tRoot.Position + rndOffset) * CFrame.Angles(math.rad(math.random(0, 360)), math.rad(math.random(0, 360)), 0)
         elseif flingMode == "Obliterate" then
-            -- Extreme hybrid predictive multi-axis impulse override algorithm
-            local predVel = tRoot.AssemblyLinearVelocity * 0.05
-            local spiralRadius = math.random(1, 3) * 0.5
+            -- Predictive hyper-impulse override algorithm
+            local predVel = tRoot.AssemblyLinearVelocity * (dt * 1.5)
+            local spiralRadius = math.random(1, 2) * 0.2
             local rad = math.rad(angle)
             local jitterOffset = Vector3.new(
-                math.cos(rad * 3) * spiralRadius + (math.random(-15, 15) * 0.05),
-                (math.sin(rad * 5) * 1.5) + 0.2,
-                math.sin(rad * 3) * spiralRadius + (math.random(-15, 15) * 0.05)
+                math.cos(rad * 5) * spiralRadius + (math.random(-20, 20) * 0.02),
+                (math.sin(rad * 8) * 0.8) + 0.1,
+                math.sin(rad * 5) * spiralRadius + (math.random(-20, 20) * 0.02)
             )
-            
-            root.AssemblyLinearVelocity = Vector3.new(1e14, 1e14, 1e14)
-            root.AssemblyAngularVelocity = Vector3.new(1e15, 1e15, 1e15)
+
+            root.AssemblyLinearVelocity = Vector3.new(1e38, 1e38, 1e38)
+            root.AssemblyAngularVelocity = Vector3.new(1e38, 1e38, 1e38)
             root.CFrame = (tRoot.CFrame + predVel + jitterOffset) * CFrame.Angles(math.rad(math.random(0, 360)), math.rad(math.random(0, 360)), math.rad(math.random(0, 360)))
         end
     end)
@@ -337,7 +345,9 @@ local function ExecuteFling(targetPlayer, flingMode)
     until not getgenv().FlingActive or not tRoot or not tRoot.Parent or (tHumanoid and tHumanoid.Health <= 0) or tick() - startTime > 3.0
 
     if connection then connection:Disconnect() end
-    bv:Destroy()
+    if noclipConn then noclipConn:Disconnect() end
+    lv:Destroy()
+    att:Destroy()
 
     humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
     workspace.CurrentCamera.CameraSubject = humanoid
@@ -350,7 +360,7 @@ local function ExecuteFling(targetPlayer, flingMode)
         end
         task.wait()
     end
-    
+
     workspace.FallenPartsDestroyHeight = oldFPDH
     getgenv().FlingActive = false
 end
@@ -607,4 +617,4 @@ CreateBtn("LOAD INFINITE YIELD", UDim2.new(0.05, 0, 0.80, 0), UDim2.new(0.9, 0, 
     end)
 end)
 
-Notify("c00lkidd GUI", "System initialized with Obliterate mode.", 3)
+Notify("c00lkidd GUI", "System initialized with boosted velocity engine.", 3)
