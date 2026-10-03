@@ -201,7 +201,7 @@ CreateScriptButton("Fling Gui", "https://raw.githubusercontent.com/mcser1/script
 CreateScriptButton("Fly Gui", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/fly.lua")
 CreateScriptButton("dropkick (NDS)", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/dropkick.lua")
 CreateScriptButton("infiniteyield", "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
--- CreateScriptButton("Game Name 5", "https://raw.githubusercontent.com/.../script5.lua")
+CreateScriptButton("Useless (DONT)", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/useless.lua")
 -- CreateScriptButton("Game Name 5", "https://raw.githubusercontent.com/.../script5.lua")
 -- CreateScriptButton("Game Name 5", "https://raw.githubusercontent.com/.../script5.lua")
 -- CreateScriptButton("Game Name 5", "https://raw.githubusercontent.com/.../script5.lua")
