@@ -20,6 +20,7 @@ getgenv().AttackNPCs = false
 getgenv().CheckFF = true
 getgenv().AutoEquip = true
 getgenv().ShowVisualizer = false
+getgenv().RotateToTarget = false
 
 -- // Internal Variables
 local auraConnection
@@ -167,6 +168,11 @@ local function StartAura()
                         end
 
                         if isAllowed then
+                            -- Target Rotation Logic
+                            if getgenv().RotateToTarget then
+                                root.CFrame = CFrame.new(root.Position, Vector3.new(targetRoot.Position.X, root.Position.Y, targetRoot.Position.Z))
+                            end
+
                             tool:Activate()
                             for _, bodyPart in ipairs(targetChar:GetChildren()) do
                                 if bodyPart:IsA("BasePart") then
@@ -199,8 +205,8 @@ Main.Parent = ScreenGui
 Main.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
 Main.BorderColor3 = Color3.fromRGB(220, 0, 0)
 Main.BorderSizePixel = 2
-Main.Position = UDim2.new(0.3, 0, 0.15, 0)
-Main.Size = UDim2.new(0, 330, 0, 440)
+Main.Position = UDim2.new(0.3, 0, 0.12, 0)
+Main.Size = UDim2.new(0, 330, 0, 480)
 Main.Active = true
 
 local Top = Instance.new("Frame")
@@ -224,7 +230,7 @@ Title.TextColor3 = Color3.fromRGB(255, 30, 30)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Floating Open Button for Mobile/PC
+-- Floating Open Button
 local OpenBtn = Instance.new("TextButton")
 OpenBtn.Name = "OpenBtn"
 OpenBtn.Parent = ScreenGui
@@ -299,7 +305,7 @@ local function CreateBtn(text, pos, size, bgColor, textColor, callback)
 end
 
 -- Main Toggle
-local AuraBtn = CreateBtn("Toggle Aura (OFF) [K]", UDim2.new(0.05, 0, 0.09, 0), UDim2.new(0.9, 0, 0.08, 0))
+local AuraBtn = CreateBtn("Toggle Aura (OFF) [K]", UDim2.new(0.05, 0, 0.08, 0), UDim2.new(0.9, 0, 0.07, 0))
 AuraBtn.MouseButton1Click:Connect(function()
     getgenv().KillAura = not getgenv().KillAura
     AuraBtn.Text = getgenv().KillAura and "Toggle Aura (ON) [K]" or "Toggle Aura (OFF) [K]"
@@ -311,19 +317,19 @@ end)
 local RangeLabel = Instance.new("TextLabel")
 RangeLabel.Parent = Main
 RangeLabel.BackgroundTransparency = 1
-RangeLabel.Position = UDim2.new(0.05, 0, 0.18, 0)
-RangeLabel.Size = UDim2.new(0.9, 0, 0.05, 0)
+RangeLabel.Position = UDim2.new(0.05, 0, 0.16, 0)
+RangeLabel.Size = UDim2.new(0.9, 0, 0.04, 0)
 RangeLabel.Font = Enum.Font.Code
 RangeLabel.Text = "Range: " .. tostring(getgenv().AuraRange) .. " Studs"
 RangeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 RangeLabel.TextSize = 12
 
-CreateBtn("-5 Range", UDim2.new(0.05, 0, 0.24, 0), UDim2.new(0.43, 0, 0.07, 0), nil, nil, function()
+CreateBtn("-5 Range", UDim2.new(0.05, 0, 0.21, 0), UDim2.new(0.43, 0, 0.06, 0), nil, nil, function()
     getgenv().AuraRange = math.max(5, getgenv().AuraRange - 5)
     RangeLabel.Text = "Range: " .. tostring(getgenv().AuraRange) .. " Studs"
 end)
 
-CreateBtn("+5 Range", UDim2.new(0.52, 0, 0.24, 0), UDim2.new(0.43, 0, 0.07, 0), nil, nil, function()
+CreateBtn("+5 Range", UDim2.new(0.52, 0, 0.21, 0), UDim2.new(0.43, 0, 0.06, 0), nil, nil, function()
     getgenv().AuraRange = math.min(150, getgenv().AuraRange + 5)
     RangeLabel.Text = "Range: " .. tostring(getgenv().AuraRange) .. " Studs"
 end)
@@ -332,66 +338,74 @@ end)
 local CPSLabel = Instance.new("TextLabel")
 CPSLabel.Parent = Main
 CPSLabel.BackgroundTransparency = 1
-CPSLabel.Position = UDim2.new(0.05, 0, 0.32, 0)
-CPSLabel.Size = UDim2.new(0.9, 0, 0.05, 0)
+CPSLabel.Position = UDim2.new(0.05, 0, 0.28, 0)
+CPSLabel.Size = UDim2.new(0.9, 0, 0.04, 0)
 CPSLabel.Font = Enum.Font.Code
 CPSLabel.Text = "CPS (Hit Speed): " .. tostring(getgenv().AuraCPS)
 CPSLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 CPSLabel.TextSize = 12
 
-CreateBtn("-5 CPS", UDim2.new(0.05, 0, 0.38, 0), UDim2.new(0.43, 0, 0.07, 0), nil, nil, function()
+CreateBtn("-5 CPS", UDim2.new(0.05, 0, 0.33, 0), UDim2.new(0.43, 0, 0.06, 0), nil, nil, function()
     getgenv().AuraCPS = math.max(1, getgenv().AuraCPS - 5)
     CPSLabel.Text = "CPS (Hit Speed): " .. tostring(getgenv().AuraCPS)
 end)
 
-CreateBtn("+5 CPS", UDim2.new(0.52, 0, 0.38, 0), UDim2.new(0.43, 0, 0.07, 0), nil, nil, function()
+CreateBtn("+5 CPS", UDim2.new(0.52, 0, 0.33, 0), UDim2.new(0.43, 0, 0.06, 0), nil, nil, function()
     getgenv().AuraCPS = math.min(100, getgenv().AuraCPS + 5)
     CPSLabel.Text = "CPS (Hit Speed): " .. tostring(getgenv().AuraCPS)
 end)
 
 -- Checks Toggles
-local TeamBtn = CreateBtn("Team Check: ON", UDim2.new(0.05, 0, 0.47, 0), UDim2.new(0.43, 0, 0.08, 0), nil, Color3.fromRGB(255, 220, 0))
+local TeamBtn = CreateBtn("Team Check: ON", UDim2.new(0.05, 0, 0.41, 0), UDim2.new(0.43, 0, 0.07, 0), nil, Color3.fromRGB(255, 220, 0))
 TeamBtn.MouseButton1Click:Connect(function()
     getgenv().TeamCheck = not getgenv().TeamCheck
     TeamBtn.Text = getgenv().TeamCheck and "Team Check: ON" or "Team Check: OFF"
     TeamBtn.TextColor3 = getgenv().TeamCheck and Color3.fromRGB(255, 220, 0) or Color3.fromRGB(255, 50, 50)
 end)
 
-local NPCBtn = CreateBtn("Target NPCs: OFF", UDim2.new(0.52, 0, 0.47, 0), UDim2.new(0.43, 0, 0.08, 0))
+local NPCBtn = CreateBtn("Target NPCs: OFF", UDim2.new(0.52, 0, 0.41, 0), UDim2.new(0.43, 0, 0.07, 0))
 NPCBtn.MouseButton1Click:Connect(function()
     getgenv().AttackNPCs = not getgenv().AttackNPCs
     NPCBtn.Text = getgenv().AttackNPCs and "Target NPCs: ON" or "Target NPCs: OFF"
     NPCBtn.TextColor3 = getgenv().AttackNPCs and Color3.fromRGB(255, 220, 0) or Color3.fromRGB(255, 50, 50)
 end)
 
-local EquipBtn = CreateBtn("Auto Equip: ON", UDim2.new(0.05, 0, 0.57, 0), UDim2.new(0.43, 0, 0.08, 0), nil, Color3.fromRGB(255, 220, 0))
+local EquipBtn = CreateBtn("Auto Equip: ON", UDim2.new(0.05, 0, 0.49, 0), UDim2.new(0.43, 0, 0.07, 0), nil, Color3.fromRGB(255, 220, 0))
 EquipBtn.MouseButton1Click:Connect(function()
     getgenv().AutoEquip = not getgenv().AutoEquip
     EquipBtn.Text = getgenv().AutoEquip and "Auto Equip: ON" or "Auto Equip: OFF"
     EquipBtn.TextColor3 = getgenv().AutoEquip and Color3.fromRGB(255, 220, 0) or Color3.fromRGB(255, 50, 50)
 end)
 
-local FFBtn = CreateBtn("Check FF: ON", UDim2.new(0.52, 0, 0.57, 0), UDim2.new(0.43, 0, 0.08, 0), nil, Color3.fromRGB(255, 220, 0))
+local FFBtn = CreateBtn("Check FF: ON", UDim2.new(0.52, 0, 0.49, 0), UDim2.new(0.43, 0, 0.07, 0), nil, Color3.fromRGB(255, 220, 0))
 FFBtn.MouseButton1Click:Connect(function()
     getgenv().CheckFF = not getgenv().CheckFF
     FFBtn.Text = getgenv().CheckFF and "Check FF: ON" or "Check FF: OFF"
     FFBtn.TextColor3 = getgenv().CheckFF and Color3.fromRGB(255, 220, 0) or Color3.fromRGB(255, 50, 50)
 end)
 
-local VisBtn = CreateBtn("Visual Sphere: OFF", UDim2.new(0.05, 0, 0.67, 0), UDim2.new(0.9, 0, 0.08, 0))
+local VisBtn = CreateBtn("Visual Sphere: OFF", UDim2.new(0.05, 0, 0.57, 0), UDim2.new(0.43, 0, 0.07, 0))
 VisBtn.MouseButton1Click:Connect(function()
     getgenv().ShowVisualizer = not getgenv().ShowVisualizer
     VisBtn.Text = getgenv().ShowVisualizer and "Visual Sphere: ON" or "Visual Sphere: OFF"
     VisBtn.TextColor3 = getgenv().ShowVisualizer and Color3.fromRGB(255, 220, 0) or Color3.fromRGB(255, 50, 50)
 end)
 
+-- Target Rotation Toggle
+local RotateBtn = CreateBtn("Face Target: OFF", UDim2.new(0.52, 0, 0.57, 0), UDim2.new(0.43, 0, 0.07, 0))
+RotateBtn.MouseButton1Click:Connect(function()
+    getgenv().RotateToTarget = not getgenv().RotateToTarget
+    RotateBtn.Text = getgenv().RotateToTarget and "Face Target: ON" or "Face Target: OFF"
+    RotateBtn.TextColor3 = getgenv().RotateToTarget and Color3.fromRGB(255, 220, 0) or Color3.fromRGB(255, 50, 50)
+end)
+
 -- Quick CPS Presets
-CreateBtn("MAX CPS (100)", UDim2.new(0.05, 0, 0.77, 0), UDim2.new(0.43, 0, 0.08, 0), Color3.fromRGB(40, 10, 10), Color3.fromRGB(255, 150, 150), function()
+CreateBtn("MAX CPS (100)", UDim2.new(0.05, 0, 0.66, 0), UDim2.new(0.43, 0, 0.07, 0), Color3.fromRGB(40, 10, 10), Color3.fromRGB(255, 150, 150), function()
     getgenv().AuraCPS = 100
     CPSLabel.Text = "CPS (Hit Speed): 100"
 end)
 
-CreateBtn("LEGIT CPS (15)", UDim2.new(0.52, 0, 0.77, 0), UDim2.new(0.43, 0, 0.08, 0), Color3.fromRGB(20, 20, 25), Color3.fromRGB(200, 200, 200), function()
+CreateBtn("LEGIT CPS (15)", UDim2.new(0.52, 0, 0.66, 0), UDim2.new(0.43, 0, 0.07, 0), Color3.fromRGB(20, 20, 25), Color3.fromRGB(200, 200, 200), function()
     getgenv().AuraCPS = 15
     CPSLabel.Text = "CPS (Hit Speed): 15"
 end)
@@ -415,4 +429,4 @@ LocalPlayer.CharacterAdded:Connect(function()
     AuraBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
 end)
 
-Notify("c00lkidd Kill Aura", "Loaded! Mobile & PC ready.", 3)
+Notify("c00lkidd Kill Aura", "Loaded! Target rotation added.", 3)
