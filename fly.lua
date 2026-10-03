@@ -144,7 +144,6 @@ noFallConnection = RunService.Heartbeat:Connect(function()
         local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         if root and humanoid then
-            -- Reset downward fall speed right before impact to prevent NDS fall damage script trigger
             if root.AssemblyLinearVelocity.Y < -30 then
                 root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, -5, root.AssemblyLinearVelocity.Z)
             end
@@ -261,7 +260,9 @@ local function CreateBtn(text, pos, size, bgColor, textColor, callback)
     btn.Text = text
     btn.TextColor3 = textColor or Color3.fromRGB(255, 50, 50)
     btn.TextSize = 12
-    btn.MouseButton1Click:Connect(callback)
+    if callback then
+        btn.MouseButton1Click:Connect(callback)
+    end
     return btn
 end
 
@@ -311,12 +312,18 @@ CreateBtn("+10 Speed", UDim2.new(0.52, 0, 0.41, 0), UDim2.new(0.43, 0, 0.08, 0),
     SpeedLabel.Text = "Fly Speed: " .. tostring(getgenv().FlySpeed)
 end)
 
--- Mobile/Touch Direction Buttons
+-- Mobile/Touch Compatible Button Binding
 local function BindTouchBtn(btn, flag)
-    btn.MouseButton1Down:Connect(function() getgenv()[flag] = true end)
-    btn.MouseButton1Up:Connect(function() getgenv()[flag] = false end)
-    btn.TouchStarted:Connect(function() getgenv()[flag] = true end)
-    btn.TouchEnded:Connect(function() getgenv()[flag] = false end)
+    btn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            getgenv()[flag] = true
+        end
+    end)
+    btn.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            getgenv()[flag] = false
+        end
+    end)
 end
 
 local UpBtn = CreateBtn("UP (E)", UDim2.new(0.05, 0, 0.52, 0), UDim2.new(0.9, 0, 0.1, 0), Color3.fromRGB(35, 10, 10), Color3.fromRGB(255, 255, 255))
