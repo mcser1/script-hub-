@@ -199,8 +199,8 @@ end
 -- // Add Game Buttons Here
 CreateScriptButton("Fling Gui", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/nds.lua")
 CreateScriptButton("Fly Gui", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/fly.lua")
--- CreateScriptButton("Game Name 3", "https://raw.githubusercontent.com/.../script3.lua")
--- CreateScriptButton("Game Name 4", "https://raw.githubusercontent.com/.../script4.lua")
+CreateScriptButton("dropkick (NDS)", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/dropkick.lua")
+CreateScriptButton("infiniteyield", "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
 -- CreateScriptButton("Game Name 5", "https://raw.githubusercontent.com/.../script5.lua")
 -- CreateScriptButton("Game Name 5", "https://raw.githubusercontent.com/.../script5.lua")
 -- CreateScriptButton("Game Name 5", "https://raw.githubusercontent.com/.../script5.lua")
