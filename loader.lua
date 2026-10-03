@@ -197,7 +197,7 @@ local function CreateScriptButton(gameName, scriptUrl)
 end
 
 -- // Add Game Buttons Here
-CreateScriptButton("Natural Disaster Survival", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/nds.lua")
+CreateScriptButton("Fling", "https://raw.githubusercontent.com/mcser1/script-hub-/refs/heads/main/nds.lua")
 -- CreateScriptButton("Game Name 2", "https://raw.githubusercontent.com/.../script2.lua")
 -- CreateScriptButton("Game Name 3", "https://raw.githubusercontent.com/.../script3.lua")
 
