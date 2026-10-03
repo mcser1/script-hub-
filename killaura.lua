@@ -29,14 +29,16 @@ local lastAttack = 0
 
 -- // Notifications
 local function Notify(title, text, duration)
-    StarterGui:SetCore("SendNotification", {
-        Title = title,
-        Text = text,
-        Duration = duration or 3
-    })
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = duration or 3
+        })
+    end)
 end
 
--- // Make Draggable Function (Touch & PC Compatible)
+-- // Draggable Helper
 local function MakeDraggable(frame, dragHandle)
     local dragging, dragStart, startPos
     dragHandle = dragHandle or frame
@@ -47,9 +49,11 @@ local function MakeDraggable(frame, dragHandle)
             dragStart = input.Position
             startPos = frame.Position
 
-            input.Changed:Connect(function()
+            local connection
+            connection = input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
+                    connection:Disconnect()
                 end
             end)
         end
@@ -66,14 +70,20 @@ end
 -- // Get Equipped Tool & Handle
 local function GetToolHandle()
     local char = LocalPlayer.Character
-    if not char then return nil end
+    if not char then return nil, nil end
 
     local tool = char:FindFirstChildOfClass("Tool")
     if not tool and getgenv().AutoEquip then
-        local backpackTool = LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
-        if backpackTool then
-            char:FindFirstChildOfClass("Humanoid"):EquipTool(backpackTool)
-            tool = backpackTool
+        local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
+        if backpack then
+            local backpackTool = backpack:FindFirstChildOfClass("Tool")
+            if backpackTool then
+                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid:EquipTool(backpackTool)
+                    tool = backpackTool
+                end
+            end
         end
     end
 
@@ -95,10 +105,12 @@ local function UpdateVisualizer(root)
             rangeVisualizer.Color = Color3.fromRGB(220, 0, 0)
             rangeVisualizer.Transparency = 0.75
             rangeVisualizer.CanCollide = false
+            rangeVisualizer.CanQuery = false
             rangeVisualizer.Anchored = true
             rangeVisualizer.Parent = workspace
         end
-        rangeVisualizer.Size = Vector3.new(getgenv().AuraRange * 2, getgenv().AuraRange * 2, getgenv().AuraRange * 2)
+        local diameter = getgenv().AuraRange * 2
+        rangeVisualizer.Size = Vector3.new(diameter, diameter, diameter)
         rangeVisualizer.CFrame = root.CFrame
     else
         if rangeVisualizer then
@@ -108,24 +120,48 @@ local function UpdateVisualizer(root)
     end
 end
 
--- // Attack Target Logic
+-- // Safe Instant Touch Attack
 local function AttackPart(handle, targetPart)
     if not handle or not targetPart then return end
-    
+
     if firetouchinterest then
         firetouchinterest(handle, targetPart, 0)
-        task.wait()
         firetouchinterest(handle, targetPart, 1)
     else
         handle.CFrame = targetPart.CFrame
     end
 end
 
--- // Core Aura Loop
+-- // Optimized Target Collector
+local function GetPotentialTargets()
+    local targets = {}
+
+    -- Collect Players
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            table.insert(targets, player.Character)
+        end
+    end
+
+    -- Collect NPCs if enabled (Scans workspace children instead of GetDescendants)
+    if getgenv().AttackNPCs then
+        for _, child in ipairs(workspace:GetChildren()) do
+            if child:IsA("Model") and child ~= LocalPlayer.Character and not Players:GetPlayerFromCharacter(child) then
+                if child:FindFirstChildOfClass("Humanoid") then
+                    table.insert(targets, child)
+                end
+            end
+        end
+    end
+
+    return targets
+end
+
+-- // Core Loop Execution
 local function StartAura()
     if auraConnection then auraConnection:Disconnect() end
 
-    auraConnection = RunService.RenderStepped:Connect(function()
+    auraConnection = RunService.Heartbeat:Connect(function()
         if not getgenv().KillAura then return end
 
         local char = LocalPlayer.Character
@@ -136,29 +172,26 @@ local function StartAura()
         UpdateVisualizer(root)
 
         local attackDelay = (getgenv().AuraCPS >= 100) and 0 or (1 / math.max(1, getgenv().AuraCPS))
-        if tick() - lastAttack < attackDelay then return end
+        if os.clock() - lastAttack < attackDelay then return end
 
         local tool, handle = GetToolHandle()
         if not tool or not handle then return end
 
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("Humanoid") and obj.Health > 0 and obj.Parent ~= char then
-                local targetChar = obj.Parent
+        local targets = GetPotentialTargets()
+
+        for _, targetChar in ipairs(targets) do
+            local targetHumanoid = targetChar:FindFirstChildOfClass("Humanoid")
+            if targetHumanoid and targetHumanoid.Health > 0 then
                 local targetRoot = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Torso") or targetChar:FindFirstChild("UpperTorso")
-                
+
                 if targetRoot then
                     local distance = (root.Position - targetRoot.Position).Magnitude
                     if distance <= getgenv().AuraRange then
                         local targetPlayer = Players:GetPlayerFromCharacter(targetChar)
                         local isAllowed = true
 
-                        -- Checks
                         if targetPlayer then
                             if getgenv().TeamCheck and targetPlayer.Team ~= nil and targetPlayer.Team == LocalPlayer.Team then
-                                isAllowed = false
-                            end
-                        else
-                            if not getgenv().AttackNPCs then
                                 isAllowed = false
                             end
                         end
@@ -168,18 +201,15 @@ local function StartAura()
                         end
 
                         if isAllowed then
-                            -- Target Rotation Logic
                             if getgenv().RotateToTarget then
                                 root.CFrame = CFrame.new(root.Position, Vector3.new(targetRoot.Position.X, root.Position.Y, targetRoot.Position.Z))
                             end
 
                             tool:Activate()
-                            for _, bodyPart in ipairs(targetChar:GetChildren()) do
-                                if bodyPart:IsA("BasePart") then
-                                    AttackPart(handle, bodyPart)
-                                end
-                            end
-                            lastAttack = tick()
+                            AttackPart(handle, targetRoot)
+
+                            lastAttack = os.clock()
+                            break -- Hit primary target per tick frame to prevent engine overload
                         end
                     end
                 end
@@ -189,8 +219,14 @@ local function StartAura()
 end
 
 local function StopAura()
-    if auraConnection then auraConnection:Disconnect() end
-    if rangeVisualizer then rangeVisualizer:Destroy() rangeVisualizer = nil end
+    if auraConnection then
+        auraConnection:Disconnect()
+        auraConnection = nil
+    end
+    if rangeVisualizer then
+        rangeVisualizer:Destroy()
+        rangeVisualizer = nil
+    end
 end
 
 -- // UI Creation
@@ -225,7 +261,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 10, 0, 0)
 Title.Size = UDim2.new(1, -70, 1, 0)
 Title.Font = Enum.Font.Code
-Title.Text = "c00lkidd KILL AURA V2"
+Title.Text = "c00lkidd KILL AURA V2 [FIXED]"
 Title.TextColor3 = Color3.fromRGB(255, 30, 30)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -429,4 +465,4 @@ LocalPlayer.CharacterAdded:Connect(function()
     AuraBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
 end)
 
-Notify("c00lkidd Kill Aura", "Loaded! Target rotation added.", 3)
+Notify("c00lkidd Kill Aura", "Loaded stably! Overhead scans eliminated.", 3)
