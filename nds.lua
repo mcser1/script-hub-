@@ -40,11 +40,13 @@ LocalPlayer.CharacterAdded:Connect(SetupAntiFallDamage)
 
 -- // Helper Functions
 local function Notify(title, text, duration)
-    StarterGui:SetCore("SendNotification", {
-        Title = title,
-        Text = text,
-        Duration = duration or 3
-    })
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = duration or 3
+        })
+    end)
 end
 
 local function GetTargetPlayers(input)
@@ -147,7 +149,7 @@ local function ToggleRingParts(enable)
     end)
 end
 
--- // Player ESP System (Fixed Cleanup)
+-- // Player ESP System
 local ESPConnections = {}
 
 local function RemoveESPFromChar(char)
@@ -234,7 +236,7 @@ Players.PlayerRemoving:Connect(function(plr)
     end
 end)
 
--- // High-Velocity Fling Engine
+-- // New Fling Engine (Extracted from provided text file)
 local function StopAllFlings()
     getgenv().FlingActive = false
     local char = LocalPlayer.Character
@@ -253,146 +255,166 @@ local function StopAllFlings()
     Notify("c00lkidd Fling", "All active fling threads terminated.", 3)
 end
 
-local function ExecuteFling(targetPlayer, flingMode)
+local function ExecuteFling(targetPlayer)
     if not targetPlayer or targetPlayer == LocalPlayer then return end
 
-    local char = LocalPlayer.Character
+    local character = LocalPlayer.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    local rootPart = humanoid and humanoid.RootPart
     local targetChar = targetPlayer.Character
-    if not char or not targetChar then return end
+    local targetHumanoid = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
+    local targetRoot = targetHumanoid and targetHumanoid.RootPart
+    local targetHead = targetChar and targetChar:FindFirstChild("Head")
+    local targetAccessory = targetChar and targetChar:FindFirstChildOfClass("Accessory")
+    local targetHandle = targetAccessory and targetAccessory:FindFirstChild("Handle")
 
-    local root = char:FindFirstChild("HumanoidRootPart")
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    local tRoot = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Head")
-    local tHumanoid = targetChar:FindFirstChildOfClass("Humanoid")
+    if not character or not rootPart or not humanoid then
+        return Notify("Error Occurred", "Local character missing", 3)
+    end
 
-    if not root or not tRoot or not humanoid or (tHumanoid and tHumanoid.Health <= 0) then return end
+    if rootPart.Velocity.Magnitude < 50 then
+        getgenv().OldPos = rootPart.CFrame
+    end
+
+    if targetHumanoid and targetHumanoid.Sit then
+        return Notify("Error Occurred", "Target is sitting", 3)
+    end
+
+    if targetHead then
+        workspace.CurrentCamera.CameraSubject = targetHead
+    elseif targetHandle then
+        workspace.CurrentCamera.CameraSubject = targetHandle
+    elseif targetHumanoid and targetRoot then
+        workspace.CurrentCamera.CameraSubject = targetHumanoid
+    end
+
+    if not (targetChar and targetChar:FindFirstChildWhichIsA("BasePart")) then
+        return
+    end
 
     getgenv().FlingActive = true
-    local oldPos = root.CFrame
-    local oldFPDH = workspace.FallenPartsDestroyHeight
-    workspace.FallenPartsDestroyHeight = 0/0
 
-    workspace.CurrentCamera.CameraSubject = tRoot
+    local function applyFlingTransforms(part, offsetCFrame, angleCFrame)
+        rootPart.CFrame = (CFrame.new(part.Position)) * offsetCFrame * angleCFrame
+        character:SetPrimaryPartCFrame((CFrame.new(part.Position)) * offsetCFrame * angleCFrame)
+        rootPart.Velocity = Vector3.new(9000000000, 900000000000, 9000000000)
+        rootPart.RotVelocity = Vector3.new(9000000000, 9000000000, 9000000000)
+    end
+
+    local function flingLoop(part)
+        local startTime = tick()
+        local total = 0
+        local shouldStop = false
+
+        repeat
+            if not getgenv().FlingActive then break end
+
+            if rootPart and targetHumanoid then
+                if part.Velocity.Magnitude < 50 then
+                    total = total + 150
+                    applyFlingTransforms(part, (CFrame.new(0, 1.5, 0)) + targetHumanoid.MoveDirection * part.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(total), 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, (CFrame.new(0, -1.5, 0)) + targetHumanoid.MoveDirection * part.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(total), 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, (CFrame.new(3.5, 2.5, -3.5)) + targetHumanoid.MoveDirection * part.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(total), 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, (CFrame.new(-3.5, -2.5, 3.5)) + targetHumanoid.MoveDirection * part.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(total), 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, (CFrame.new(0, 2, 0)) + targetHumanoid.MoveDirection * 2, CFrame.Angles(math.rad(total), 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, (CFrame.new(0, -2, 0)) + targetHumanoid.MoveDirection * 2, CFrame.Angles(math.rad(total), 0, 0))
+                    task.wait()
+                else
+                    applyFlingTransforms(part, CFrame.new(0, 2, targetHumanoid.WalkSpeed * 2), CFrame.Angles(math.rad(90), 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, CFrame.new(0, -2, -targetHumanoid.WalkSpeed * 2), CFrame.Angles(0, 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, CFrame.new(0, 2, targetHumanoid.WalkSpeed * 2), CFrame.Angles(math.rad(90), 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, CFrame.new(0, 2, targetRoot.Velocity.Magnitude / 1), CFrame.Angles(math.rad(90), 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, CFrame.new(0, -2, -targetRoot.Velocity.Magnitude / 1), CFrame.Angles(0, 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, CFrame.new(0, 2, targetRoot.Velocity.Magnitude / 1), CFrame.Angles(math.rad(90), 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, CFrame.new(0, -2, 0), CFrame.Angles(math.rad(90), 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, CFrame.new(0, -2, 0), CFrame.Angles(0, 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, CFrame.new(0, -2, 0), CFrame.Angles(math.rad(-90), 0, 0))
+                    task.wait()
+                    applyFlingTransforms(part, CFrame.new(0, -2, 0), CFrame.Angles(0, 0, 0))
+                    task.wait()
+                end
+
+                shouldStop = (part.Velocity.Magnitude > 300)
+                    or (part.Parent ~= targetPlayer.Character)
+                    or (targetPlayer.Parent ~= Players)
+                    or (targetHumanoid and targetHumanoid.Sit)
+                    or (humanoid and humanoid.Health <= 0)
+                    or (tick() > startTime + 2)
+            else
+                break
+            end
+        until shouldStop
+    end
+
+    getgenv().FPDH = workspace.FallenPartsDestroyHeight
+    workspace.FallenPartsDestroyHeight = (0 / 0)
+
+    local epixVel = Instance.new("BodyVelocity")
+    epixVel.Name = "EpixVel"
+    epixVel.Parent = rootPart
+    epixVel.Velocity = Vector3.new(9000000000, 9000000000, 9000000000)
+    epixVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+
     humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
 
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = false
+    if targetRoot and targetHead then
+        if (targetRoot.CFrame.p - targetHead.CFrame.p).Magnitude > 5 then
+            flingLoop(targetHead)
+        else
+            flingLoop(targetRoot)
         end
+    elseif targetRoot then
+        flingLoop(targetRoot)
+    elseif targetHead then
+        flingLoop(targetHead)
+    elseif targetHandle then
+        flingLoop(targetHandle)
+    else
+        epixVel:Destroy()
+        return Notify("Error Occurred", "Target is missing body parts", 3)
     end
 
-    local bv = Instance.new("BodyVelocity")
-    bv.Name = "EpixVel"
-    bv.Velocity = Vector3.new(9000000000, 9000000000, 9000000000)
-    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bv.Parent = root
-
-    local startTime = tick()
-    local angle = 0
-
-    local connection
-    connection = RunService.Heartbeat:Connect(function()
-        if not getgenv().FlingActive or not root or not tRoot or not tRoot.Parent then
-            if connection then connection:Disconnect() end
-            return
-        end
-
-        angle = angle + 120
-        
-        if flingMode == "IY" then
-            -- // Ultimate Fling GUI Step Calculation Engine
-            local function StepFling(targetPart, offsetCFrame, angleCFrame)
-                if not root or not char then return end
-                root.CFrame = (CFrame.new(targetPart.Position)) * offsetCFrame * angleCFrame
-                char:SetPrimaryPartCFrame((CFrame.new(targetPart.Position)) * offsetCFrame * angleCFrame)
-
-                root.Velocity = Vector3.new(9000000000, 900000000000, 9000000000)
-                root.RotVelocity = Vector3.new(9000000000, 9000000000, 9000000000)
-            end
-
-            local targetVel = tRoot.Velocity.Magnitude
-            local moveDir = tHumanoid and tHumanoid.MoveDirection or Vector3.zero
-
-            if targetVel < 50 then
-                angle = angle + 150
-                StepFling(tRoot, (CFrame.new(0, 1.5, 0)) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
-                task.wait()
-                StepFling(tRoot, (CFrame.new(0, -1.5, 0)) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
-                task.wait()
-                StepFling(tRoot, (CFrame.new(3.5, 2.5, -3.5)) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
-                task.wait()
-                StepFling(tRoot, (CFrame.new(-3.5, -2.5, 3.5)) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
-                task.wait()
-                StepFling(tRoot, (CFrame.new(0, 2, 0)) + moveDir * 2, CFrame.Angles(math.rad(angle), 0, 0))
-                task.wait()
-                StepFling(tRoot, (CFrame.new(0, -2, 0)) + moveDir * 2, CFrame.Angles(math.rad(angle), 0, 0))
-                task.wait()
-            else
-                local walkSpeed = tHumanoid and tHumanoid.WalkSpeed or 16
-                StepFling(tRoot, CFrame.new(0, 2, walkSpeed * 2), CFrame.Angles(math.rad(90), 0, 0))
-                task.wait()
-                StepFling(tRoot, CFrame.new(0, -2, -walkSpeed * 2), CFrame.Angles(0, 0, 0))
-                task.wait()
-                StepFling(tRoot, CFrame.new(0, 2, walkSpeed * 2), CFrame.Angles(math.rad(90), 0, 0))
-                task.wait()
-                StepFling(tRoot, CFrame.new(0, 2, targetVel), CFrame.Angles(math.rad(90), 0, 0))
-                task.wait()
-                StepFling(tRoot, CFrame.new(0, -2, -targetVel), CFrame.Angles(0, 0, 0))
-                task.wait()
-                StepFling(tRoot, CFrame.new(0, 2, targetVel), CFrame.Angles(math.rad(90), 0, 0))
-                task.wait()
-                StepFling(tRoot, CFrame.new(0, -2, 0), CFrame.Angles(math.rad(90), 0, 0))
-                task.wait()
-                StepFling(tRoot, CFrame.new(0, -2, 0), CFrame.Angles(0, 0, 0))
-                task.wait()
-                StepFling(tRoot, CFrame.new(0, -2, 0), CFrame.Angles(math.rad(-90), 0, 0))
-                task.wait()
-                StepFling(tRoot, CFrame.new(0, -2, 0), CFrame.Angles(0, 0, 0))
-                task.wait()
-            end
-        else
-            root.AssemblyLinearVelocity = Vector3.new(9e9, 9e9, 9e9)
-            root.AssemblyAngularVelocity = Vector3.new(1e12, 1e12, 1e12)
-
-            if flingMode == "Super" then
-                local rndOffset = Vector3.new(math.random(-0.5, 0.5), 0, math.random(-0.5, 0.5))
-                root.CFrame = tRoot.CFrame * CFrame.new(rndOffset) * CFrame.Angles(math.rad(angle * 3), math.rad(angle), math.rad(angle * 2))
-            elseif flingMode == "Orbit" then
-                local orbitRadius = 2.5
-                local rad = math.rad(angle)
-                local offset = Vector3.new(math.cos(rad) * orbitRadius, math.sin(rad * 2), math.sin(rad) * orbitRadius)
-                root.CFrame = CFrame.new(tRoot.Position + offset, tRoot.Position) * CFrame.Angles(math.rad(angle), 0, 0)
-            elseif flingMode == "Skid" then
-                local rndOffset = Vector3.new(math.random(-3, 3), math.random(-2, 2), math.random(-3, 3))
-                root.CFrame = CFrame.new(tRoot.Position + rndOffset) * CFrame.Angles(math.rad(math.random(0, 360)), math.rad(math.random(0, 360)), 0)
-            end
-        end
-    end)
-
-    repeat
-        task.wait()
-    until not getgenv().FlingActive or not tRoot or not tRoot.Parent or (tHumanoid and tHumanoid.Health <= 0) or tick() - startTime > 3.0
-
-    if connection then connection:Disconnect() end
-    bv:Destroy()
-
+    epixVel:Destroy()
     humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+    task.wait(1)
     workspace.CurrentCamera.CameraSubject = humanoid
 
-    for _ = 1, 6 do
-        if root then
-            root.CFrame = oldPos
-            root.AssemblyLinearVelocity = Vector3.zero
-            root.AssemblyAngularVelocity = Vector3.zero
+    repeat
+        if getgenv().OldPos then
+            rootPart.CFrame = getgenv().OldPos * CFrame.new(0, 0.5, 0)
+            character:SetPrimaryPartCFrame(getgenv().OldPos * CFrame.new(0, 0.5, 0))
+            humanoid:ChangeState("GettingUp")
+        end
+
+        for _, part in pairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Velocity = Vector3.new()
+                part.RotVelocity = Vector3.new()
+            end
         end
         task.wait()
+    until not getgenv().OldPos or (rootPart.Position - getgenv().OldPos.p).Magnitude < 25
+
+    if getgenv().FPDH then
+        workspace.FallenPartsDestroyHeight = getgenv().FPDH
     end
-    
-    workspace.FallenPartsDestroyHeight = oldFPDH
     getgenv().FlingActive = false
 end
 
--- // Cross-Platform Dragging Handler (PC + Mobile Support)
+-- // Cross-Platform Dragging Handler
 local function MakeDraggable(frame, dragHandle)
     local dragging = false
     local dragInput, dragStart, startPos
@@ -556,21 +578,21 @@ local function CreateBtn(text, pos, size, bgColor, textColor, callback)
 end
 
 -- // Action Handlers
-local function RunFlingBatch(mode)
+local function RunFlingBatch()
     local targets = GetTargetPlayers(TextBox.Text)
     if #targets == 0 then return Notify("c00lkidd Error", "No targets found.", 3) end
     task.spawn(function()
         for _, plr in ipairs(targets) do
-            ExecuteFling(plr, mode)
+            ExecuteFling(plr)
             task.wait(0.1)
         end
     end)
 end
 
-CreateBtn("IY Fling", UDim2.new(0.05, 0, 0.17, 0), UDim2.new(0.43, 0, 0.07, 0), nil, nil, function() RunFlingBatch("IY") end)
-CreateBtn("Super Fling", UDim2.new(0.52, 0, 0.17, 0), UDim2.new(0.43, 0, 0.07, 0), nil, nil, function() RunFlingBatch("Super") end)
-CreateBtn("Orbit Fling", UDim2.new(0.05, 0, 0.25, 0), UDim2.new(0.43, 0, 0.07, 0), nil, nil, function() RunFlingBatch("Orbit") end)
-CreateBtn("Skid Fling", UDim2.new(0.52, 0, 0.25, 0), UDim2.new(0.43, 0, 0.07, 0), nil, nil, function() RunFlingBatch("Skid") end)
+-- Single Fling Button replacing the previous 4 mode buttons
+CreateBtn("FLING TARGET", UDim2.new(0.05, 0, 0.17, 0), UDim2.new(0.9, 0, 0.15, 0), Color3.fromRGB(90, 0, 0), Color3.fromRGB(255, 255, 255), function()
+    RunFlingBatch()
+end)
 
 -- // Fling Nearest Action
 CreateBtn("FLING NEAREST PLAYER", UDim2.new(0.05, 0, 0.33, 0), UDim2.new(0.9, 0, 0.07, 0), Color3.fromRGB(70, 0, 0), Color3.fromRGB(255, 200, 200), function()
@@ -578,7 +600,7 @@ CreateBtn("FLING NEAREST PLAYER", UDim2.new(0.05, 0, 0.33, 0), UDim2.new(0.9, 0,
     if target then
         Notify("c00lkidd Fling", "Targeting Nearest: " .. target.DisplayName, 3)
         task.spawn(function()
-            ExecuteFling(target, "Super")
+            ExecuteFling(target)
         end)
     else
         Notify("c00lkidd Error", "No nearby player found.", 3)
