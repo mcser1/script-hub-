@@ -206,13 +206,11 @@ end
 local function ToggleESP(enable)
     getgenv().ESPActive = enable
     if not enable then
-        -- Disconnect player spawn listeners
         for plr, conn in pairs(ESPConnections) do
             if conn then conn:Disconnect() end
         end
         ESPConnections = {}
 
-        -- Thoroughly sweep and clean all ESP visuals from every player
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr.Character then
                 RemoveESPFromChar(plr.Character)
@@ -284,7 +282,8 @@ local function ExecuteFling(targetPlayer, flingMode)
     end
 
     local bv = Instance.new("BodyVelocity")
-    bv.Velocity = Vector3.new(1e10, 1e10, 1e10)
+    bv.Name = "EpixVel"
+    bv.Velocity = Vector3.new(9000000000, 9000000000, 9000000000)
     bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
     bv.Parent = root
 
@@ -300,23 +299,73 @@ local function ExecuteFling(targetPlayer, flingMode)
 
         angle = angle + 120
         
-        root.AssemblyLinearVelocity = Vector3.new(9e9, 9e9, 9e9)
-        root.AssemblyAngularVelocity = Vector3.new(1e12, 1e12, 1e12)
-
         if flingMode == "IY" then
-            local offset = CFrame.new(0, 1.2, 0) * CFrame.Angles(math.rad(angle), math.rad(angle * 2), 0)
-            root.CFrame = tRoot.CFrame * offset
-        elseif flingMode == "Super" then
-            local rndOffset = Vector3.new(math.random(-0.5, 0.5), 0, math.random(-0.5, 0.5))
-            root.CFrame = tRoot.CFrame * CFrame.new(rndOffset) * CFrame.Angles(math.rad(angle * 3), math.rad(angle), math.rad(angle * 2))
-        elseif flingMode == "Orbit" then
-            local orbitRadius = 2.5
-            local rad = math.rad(angle)
-            local offset = Vector3.new(math.cos(rad) * orbitRadius, math.sin(rad * 2), math.sin(rad) * orbitRadius)
-            root.CFrame = CFrame.new(tRoot.Position + offset, tRoot.Position) * CFrame.Angles(math.rad(angle), 0, 0)
-        elseif flingMode == "Skid" then
-            local rndOffset = Vector3.new(math.random(-3, 3), math.random(-2, 2), math.random(-3, 3))
-            root.CFrame = CFrame.new(tRoot.Position + rndOffset) * CFrame.Angles(math.rad(math.random(0, 360)), math.rad(math.random(0, 360)), 0)
+            -- // Ultimate Fling GUI Step Calculation Engine
+            local function StepFling(targetPart, offsetCFrame, angleCFrame)
+                if not root or not char then return end
+                root.CFrame = (CFrame.new(targetPart.Position)) * offsetCFrame * angleCFrame
+                char:SetPrimaryPartCFrame((CFrame.new(targetPart.Position)) * offsetCFrame * angleCFrame)
+
+                root.Velocity = Vector3.new(9000000000, 900000000000, 9000000000)
+                root.RotVelocity = Vector3.new(9000000000, 9000000000, 9000000000)
+            end
+
+            local targetVel = tRoot.Velocity.Magnitude
+            local moveDir = tHumanoid and tHumanoid.MoveDirection or Vector3.zero
+
+            if targetVel < 50 then
+                angle = angle + 150
+                StepFling(tRoot, (CFrame.new(0, 1.5, 0)) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
+                task.wait()
+                StepFling(tRoot, (CFrame.new(0, -1.5, 0)) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
+                task.wait()
+                StepFling(tRoot, (CFrame.new(3.5, 2.5, -3.5)) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
+                task.wait()
+                StepFling(tRoot, (CFrame.new(-3.5, -2.5, 3.5)) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
+                task.wait()
+                StepFling(tRoot, (CFrame.new(0, 2, 0)) + moveDir * 2, CFrame.Angles(math.rad(angle), 0, 0))
+                task.wait()
+                StepFling(tRoot, (CFrame.new(0, -2, 0)) + moveDir * 2, CFrame.Angles(math.rad(angle), 0, 0))
+                task.wait()
+            else
+                local walkSpeed = tHumanoid and tHumanoid.WalkSpeed or 16
+                StepFling(tRoot, CFrame.new(0, 2, walkSpeed * 2), CFrame.Angles(math.rad(90), 0, 0))
+                task.wait()
+                StepFling(tRoot, CFrame.new(0, -2, -walkSpeed * 2), CFrame.Angles(0, 0, 0))
+                task.wait()
+                StepFling(tRoot, CFrame.new(0, 2, walkSpeed * 2), CFrame.Angles(math.rad(90), 0, 0))
+                task.wait()
+                StepFling(tRoot, CFrame.new(0, 2, targetVel), CFrame.Angles(math.rad(90), 0, 0))
+                task.wait()
+                StepFling(tRoot, CFrame.new(0, -2, -targetVel), CFrame.Angles(0, 0, 0))
+                task.wait()
+                StepFling(tRoot, CFrame.new(0, 2, targetVel), CFrame.Angles(math.rad(90), 0, 0))
+                task.wait()
+                StepFling(tRoot, CFrame.new(0, -2, 0), CFrame.Angles(math.rad(90), 0, 0))
+                task.wait()
+                StepFling(tRoot, CFrame.new(0, -2, 0), CFrame.Angles(0, 0, 0))
+                task.wait()
+                StepFling(tRoot, CFrame.new(0, -2, 0), CFrame.Angles(math.rad(-90), 0, 0))
+                task.wait()
+                StepFling(tRoot, CFrame.new(0, -2, 0), CFrame.Angles(0, 0, 0))
+                task.wait()
+            end
+        else
+            root.AssemblyLinearVelocity = Vector3.new(9e9, 9e9, 9e9)
+            root.AssemblyAngularVelocity = Vector3.new(1e12, 1e12, 1e12)
+
+            if flingMode == "Super" then
+                local rndOffset = Vector3.new(math.random(-0.5, 0.5), 0, math.random(-0.5, 0.5))
+                root.CFrame = tRoot.CFrame * CFrame.new(rndOffset) * CFrame.Angles(math.rad(angle * 3), math.rad(angle), math.rad(angle * 2))
+            elseif flingMode == "Orbit" then
+                local orbitRadius = 2.5
+                local rad = math.rad(angle)
+                local offset = Vector3.new(math.cos(rad) * orbitRadius, math.sin(rad * 2), math.sin(rad) * orbitRadius)
+                root.CFrame = CFrame.new(tRoot.Position + offset, tRoot.Position) * CFrame.Angles(math.rad(angle), 0, 0)
+            elseif flingMode == "Skid" then
+                local rndOffset = Vector3.new(math.random(-3, 3), math.random(-2, 2), math.random(-3, 3))
+                root.CFrame = CFrame.new(tRoot.Position + rndOffset) * CFrame.Angles(math.rad(math.random(0, 360)), math.rad(math.random(0, 360)), 0)
+            end
         end
     end)
 
