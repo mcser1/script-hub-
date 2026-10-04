@@ -321,7 +321,7 @@ local function ExecuteFling(targetPlayer, flingMode)
                 task.wait()
                 StepFling(tRoot, (CFrame.new(3.5, 2.5, -3.5)) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
                 task.wait()
-                StepFling(tRoot, (CFrame.new(-3.5, -2.5, 3.5)) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
+                StepFling(tRoot, (-3.5, -2.5, 3.5) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
                 task.wait()
                 StepFling(tRoot, (CFrame.new(0, 2, 0)) + moveDir * 2, CFrame.Angles(math.rad(angle), 0, 0))
                 task.wait()
@@ -379,15 +379,20 @@ local function ExecuteFling(targetPlayer, flingMode)
     humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
     workspace.CurrentCamera.CameraSubject = humanoid
 
-    for _ = 1, 6 do
-        if root then
+    -- // Teleport back to original CFrame and clear residual velocity
+    if root and char then
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        char:PivotTo(oldPos)
+        
+        for _ = 1, 6 do
             root.CFrame = oldPos
             root.AssemblyLinearVelocity = Vector3.zero
             root.AssemblyAngularVelocity = Vector3.zero
+            RunService.RenderStepped:Wait()
         end
-        task.wait()
     end
-    
+
     workspace.FallenPartsDestroyHeight = oldFPDH
     getgenv().FlingActive = false
 end
