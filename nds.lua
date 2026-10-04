@@ -27,7 +27,7 @@ local function SetupAntiFallDamage(c)
             end
             local v = r.AssemblyLinearVelocity
             r.AssemblyLinearVelocity = z
-            RunService.RenderStepped:Wait()
+            task.wait()
             r.AssemblyLinearVelocity = v
         end)
     end
@@ -141,7 +141,7 @@ local function ToggleRingParts(enable)
                     p.CFrame = CFrame.new(root.Position + offset) * CFrame.Angles(angle, angle, 0)
                 end
             end
-            RunService.RenderStepped:Wait()
+            task.wait()
         end
         RingFolder:ClearAllChildren()
     end)
@@ -321,7 +321,7 @@ local function ExecuteFling(targetPlayer, flingMode)
                 task.wait()
                 StepFling(tRoot, (CFrame.new(3.5, 2.5, -3.5)) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
                 task.wait()
-                StepFling(tRoot, (-3.5, -2.5, 3.5) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
+                StepFling(tRoot, CFrame.new(-3.5, -2.5, 3.5) + moveDir * targetVel / 1.25, CFrame.Angles(math.rad(angle), 0, 0))
                 task.wait()
                 StepFling(tRoot, (CFrame.new(0, 2, 0)) + moveDir * 2, CFrame.Angles(math.rad(angle), 0, 0))
                 task.wait()
@@ -389,7 +389,7 @@ local function ExecuteFling(targetPlayer, flingMode)
             root.CFrame = oldPos
             root.AssemblyLinearVelocity = Vector3.zero
             root.AssemblyAngularVelocity = Vector3.zero
-            RunService.RenderStepped:Wait()
+            task.wait()
         end
     end
 
@@ -608,7 +608,7 @@ SpinBtn.MouseButton1Click:Connect(function()
             if root then
                 root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(50), 0)
             end
-            RunService.RenderStepped:Wait()
+            task.wait()
         end
     end)
 end)
